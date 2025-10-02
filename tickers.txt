@@ -1,0 +1,9 @@
+# Trading Data Configuration
+
+COIN_SYMBOLS = [
+    'BTCUSDT','ETHUSDT','BNBUSDT', 
+    'ADAUSDT','ALGOUSDT','APTUSDT', 'AVAXUSDT',
+    'SOLUSDT', 'CRVUSDT', 'BCHUSDT',
+    'WIFUSDT','BTCUSDT',
+    'XLMUSDT','XRPUSDT','XTZUSDT'
+]
