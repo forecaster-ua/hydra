@@ -62,6 +62,18 @@ get_hedge_service.bat restart
 - Python 3.8+ (automatically detected)
 - Virtual environment in `.venv` folder (optional but recommended)
 
+## First-Time Setup
+
+### Fix Execution Policy (Required)
+
+PowerShell blocks script execution by default. Run this command once to allow local scripts:
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+This allows running local scripts while still protecting against remote malicious scripts.
+
 ## Features
 
 - ✅ Automatic Python executable detection
