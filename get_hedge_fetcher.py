@@ -26,13 +26,14 @@ def setup_logging():
     """Настраивает логирование в зависимости от режима запуска"""
     handlers = []
     
-    # Всегда логируем в файл
-    handlers.append(logging.FileHandler('hedge_scheduler.log'))
+    # Всегда логируем в файл с UTF-8 кодировкой
+    handlers.append(logging.FileHandler('hedge_scheduler.log', encoding='utf-8'))
     
     # Добавляем StreamHandler только если не запущены через nohup/service
     # (проверяем, есть ли TTY - терминал)
-    if sys.stdout.isatty():
-        handlers.append(logging.StreamHandler())
+    # Для Windows сервисов отключаем консольный вывод чтобы избежать проблем с кодировкой
+    if sys.stdout.isatty() and os.name != 'nt':
+        handlers.append(logging.StreamHandler(sys.stdout))
     
     logging.basicConfig(
         level=logging.INFO,
@@ -61,25 +62,25 @@ class HedgeScheduler:
         signal.signal(signal.SIGINT, self.signal_handler)
         signal.signal(signal.SIGTERM, self.signal_handler)
         
-        logging.info(f"🚀 Hedge Scheduler инициализирован")
-        logging.info(f"   📍 Интервал: {interval_minutes} минут ({self.interval_seconds} секунд)")
-        logging.info(f"   🌍 Временная зона: {timezone}")
-        logging.info(f"   📂 Скрипт: {self.script_path}")
+        logging.info(f"[START] Hedge Scheduler initialized")
+        logging.info(f"   Interval: {interval_minutes} minutes ({self.interval_seconds} seconds)")
+        logging.info(f"   Timezone: {timezone}")
+        logging.info(f"   Script: {self.script_path}")
         
     def signal_handler(self, signum, frame):
         """Обработчик сигналов для корректного завершения"""
-        logging.info(f"📡 Получен сигнал {signum}, завершаю работу...")
+        logging.info(f"[SIGNAL] Received signal {signum}, shutting down...")
         self.running = False
         
     def get_local_midnight_timestamp(self) -> float:
         """Получает timestamp локальной полуночи сегодня"""
         try:
-            # Устанавливаем временную зону для расчетов
-            os.environ['TZ'] = self.timezone
-            time.tzset()
+            # Используем pytz для работы с временными зонами (кроссплатформенно)
+            import pytz
+            tz = pytz.timezone(self.timezone)
             
-            # Получаем текущее локальное время
-            now = datetime.datetime.now()
+            # Получаем текущее локальное время в указанной зоне
+            now = datetime.datetime.now(tz)
             
             # Находим полуночь сегодня (00:00:00)
             midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -88,7 +89,7 @@ class HedgeScheduler:
             return midnight.timestamp()
             
         except Exception as e:
-            logging.error(f"❌ Ошибка при получении полуночи: {e}")
+            logging.error(f"ERROR: Failed to get midnight timestamp: {e}")
             # Fallback: используем системное время
             now = time.time()
             midnight = now - (now % 86400)  # 86400 секунд в дне
@@ -109,7 +110,7 @@ class HedgeScheduler:
         # Проверяем, попали ли мы ровно в кратную точку
         if elapsed % step == 0:
             next_tick = now
-            logging.info("🎯 Попали ровно в кратную точку - выполняем немедленно")
+            logging.info("[TARGET] Hit exact interval point - executing immediately")
         else:
             # Рассчитываем следующую кратную точку
             next_tick = midnight + math.ceil(elapsed / step) * step
@@ -118,11 +119,11 @@ class HedgeScheduler:
         
     def format_time(self, timestamp: float) -> str:
         """Форматирует timestamp в читаемое время"""
-        # Устанавливаем временную зону
-        os.environ['TZ'] = self.timezone
-        time.tzset()
+        # Используем pytz для работы с временными зонами (кроссплатформенно)
+        import pytz
+        tz = pytz.timezone(self.timezone)
         
-        dt = datetime.datetime.fromtimestamp(timestamp)
+        dt = datetime.datetime.fromtimestamp(timestamp, tz)
         return dt.strftime("%Y-%m-%d %H:%M:%S %Z")
         
     def run_hedge_analyzer(self) -> bool:
@@ -133,11 +134,11 @@ class HedgeScheduler:
             bool: True если успешно, False если ошибка
         """
         if not self.script_path.exists():
-            logging.error(f"❌ Скрипт не найден: {self.script_path}")
+            logging.error(f"ERROR: Script not found: {self.script_path}")
             return False
             
         try:
-            logging.info("🔍 Запуск hedge analyzer...")
+            logging.info("[SEARCH] Starting hedge analyzer...")
             
             # Подготавливаем команду с флагом batch
             # Используем python3 явно для совместимости
@@ -163,34 +164,34 @@ class HedgeScheduler:
                 stdout, stderr = process.communicate(input=input_sequence, timeout=300)  # 5 минут timeout
                 
                 if process.returncode == 0:
-                    logging.info("✅ Hedge analyzer завершился успешно")
+                    logging.info("[SUCCESS] Hedge analyzer completed successfully")
                     
                     # Логируем важные части вывода
                     if "✅ Анализ завершен" in stdout:
-                        logging.info("📊 Анализ тикеров завершен")
+                        logging.info("[ANALYSIS] Ticker analysis completed")
                         
                     if "отправлено в Telegram" in stdout or "сообщений успешно отправлено" in stdout:
-                        logging.info("📱 Сообщения отправлены в Telegram")
+                        logging.info("[TELEGRAM] Messages sent to Telegram")
                         
                     return True
                 else:
-                    logging.error(f"❌ Hedge analyzer завершился с ошибкой (код: {process.returncode})")
+                    logging.error(f"ERROR: Hedge analyzer failed (code: {process.returncode})")
                     if stderr:
                         logging.error(f"STDERR: {stderr}")
                     return False
                     
             except subprocess.TimeoutExpired:
-                logging.error("⏱️ Timeout: hedge analyzer выполнялся слишком долго")
+                logging.error("[TIMEOUT] Hedge analyzer took too long")
                 process.kill()
                 return False
                 
         except Exception as e:
-            logging.error(f"❌ Ошибка при запуске hedge analyzer: {e}")
+            logging.error(f"ERROR: Failed to start hedge analyzer: {e}")
             return False
             
     def run_scheduler(self):
         """Основной цикл планировщика"""
-        logging.info("🎯 Запуск планировщика hedge signals...")
+        logging.info("[SCHEDULER] Starting hedge signals scheduler...")
         
         # Рассчитываем первое выполнение
         next_tick = self.calculate_next_tick()

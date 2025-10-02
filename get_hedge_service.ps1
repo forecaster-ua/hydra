@@ -8,7 +8,7 @@ param(
 )
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$HedgeScript = Join-Path $ScriptDir "get_hedge.py"
+$HedgeScript = Join-Path $ScriptDir "get_hedge_fetcher.py"
 $PidFile = Join-Path $ScriptDir "hedge_scheduler.pid"
 $LogFile = Join-Path $ScriptDir "hedge_scheduler.log"
 
@@ -75,6 +75,8 @@ switch ($Action) {
         try {
             $job = Start-Job -ScriptBlock {
                 param($pythonExe, $hedgeScript, $logFile)
+                # Set UTF-8 encoding to handle Unicode characters properly
+                $env:PYTHONIOENCODING = "utf-8"
                 & $pythonExe $hedgeScript 15 *>> $logFile
             } -ArgumentList $pythonExe, $HedgeScript, $LogFile
 
