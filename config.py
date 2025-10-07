@@ -119,7 +119,7 @@ MAX_CONCURRENT_ORDERS = int(os.getenv("MAX_CONCURRENT_ORDERS","3"))  # Макс�
 
 # --- Telegram Configuration ---
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "-1002693639183")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
 TELEGRAM_PARSE_MODE = "Markdown"  # Форматирование сообщений
 TELEGRAM_DISABLE_NOTIFICATION = False  # Включение/отключение уведомлени
