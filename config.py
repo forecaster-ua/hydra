@@ -118,7 +118,7 @@ MULTIPLE_ORDERS = os.getenv("MULTIPLE_ORDERS", "false").lower() == "true"  # Р�
 MAX_CONCURRENT_ORDERS = int(os.getenv("MAX_CONCURRENT_ORDERS","3"))  # Максимум одновременных ордеров на инструмент
 
 # --- Telegram Configuration ---
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN", "7948515996:AAHg9Tnvex3xyRc0rjnMscYTbHM1EUU5-d4")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "-1002693639183")
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
 TELEGRAM_PARSE_MODE = "Markdown"  # Форматирование сообщений
